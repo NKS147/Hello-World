@@ -36,6 +36,7 @@ public class Client extends JFrame {
 	private JTextField txtchat;
 	private JTextArea txthistory;
 	private JButton btnSend;
+	private JButton btnOnline;
 	
 	
 
@@ -90,6 +91,10 @@ public class Client extends JFrame {
 		console("Connection Established");
 		setConnectionStreams();
 		
+		// After establishing stream send the name
+		os.writeUTF(name);
+		os.flush();
+		
 		Thread receive= new Thread("receive") {
 				public void run() 
 				{
@@ -98,8 +103,24 @@ public class Client extends JFrame {
 						String msg=is.readUTF();
 						while(!msg.equals("END"))
 						{
-							console(msg);
-							msg=is.readUTF();
+						
+							if(msg=="haveonlinelist")
+							{
+								int ind=0;
+								msg=is.readUTF();
+								while(!msg.equals("endonlinelist"))
+								{
+									console(ind+msg);
+									ind++;
+									msg=is.readUTF();
+								}
+								msg=is.readUTF();
+							}
+							else
+							{
+								console(msg);
+								msg=is.readUTF();
+							}
 						}
 					}
 					catch(Exception e)
@@ -136,7 +157,7 @@ public class Client extends JFrame {
 		GridBagConstraints gbc_scroll = new GridBagConstraints();
 		gbc_scroll.gridheight = 2;
 		gbc_scroll.gridwidth = 3;
-		gbc_scroll.insets = new Insets(0, 0, 5, 5);
+		gbc_scroll.insets = new Insets(0, 0, 5, 0);
 		gbc_scroll.fill = GridBagConstraints.BOTH;
 		gbc_scroll.gridx = 0;
 		gbc_scroll.gridy = 0;
@@ -161,11 +182,33 @@ public class Client extends JFrame {
 				}
 			}
 		});
+		
+		btnOnline = new JButton("Online");
+		btnOnline.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				try
+				{
+					os.writeUTF("giveonlinelist");
+					os.flush();
+				}
+				catch(Exception e)
+				{
+					
+				}
+				
+				
+			}
+		});
+		GridBagConstraints gbc_btnOnline = new GridBagConstraints();
+		gbc_btnOnline.insets = new Insets(0, 0, 0, 5);
+		gbc_btnOnline.gridx = 0;
+		gbc_btnOnline.gridy = 2;
+		contentPane.add(btnOnline, gbc_btnOnline);
 		GridBagConstraints gbc_txtchat = new GridBagConstraints();
-		gbc_txtchat.gridwidth = 2;
 		gbc_txtchat.insets = new Insets(0, 0, 0, 5);
 		gbc_txtchat.fill = GridBagConstraints.HORIZONTAL;
-		gbc_txtchat.gridx = 0;
+		gbc_txtchat.gridx = 1;
 		gbc_txtchat.gridy = 2;
 		contentPane.add(txtchat, gbc_txtchat);
 		txtchat.setColumns(10);
@@ -176,6 +219,14 @@ public class Client extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				String msg=txtchat.getText();
 				send(msg);
+				txtchat.setText(null);
+				try {
+					whileChattingSend(msg);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
 			}
 		});
 		GridBagConstraints gbc_btnSend = new GridBagConstraints();
@@ -199,4 +250,10 @@ public class Client extends JFrame {
 		txthistory.append(msg+"\n");
 		
 	}
+	
+	
+
+	
+	
+
 }
